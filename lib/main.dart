@@ -5,10 +5,12 @@ import 'services/storage_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  final storage = StorageService();
   runApp(
-    Provider<StorageService>(
-      create: (_) => StorageService(),
+    ChangeNotifierProvider<StorageService>.value(
+      value: storage,
       child: const Ink2LatexApp(),
     ),
   );
+  storage.init(); // Load from disk after widget tree is built
 }

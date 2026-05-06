@@ -5,9 +5,10 @@ import 'package:ink2latex/services/storage_service.dart';
 
 void main() {
   testWidgets('app renders without error', (WidgetTester tester) async {
+    final storage = StorageService.inMemory();
     await tester.pumpWidget(
-      Provider<StorageService>(
-        create: (_) => StorageService(),
+      ChangeNotifierProvider<StorageService>.value(
+        value: storage,
         child: const Ink2LatexApp(),
       ),
     );
