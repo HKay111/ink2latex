@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'widgets/nav_shell.dart';
 
 class Ink2LatexApp extends StatelessWidget {
   const Ink2LatexApp({super.key});
@@ -15,9 +16,7 @@ class Ink2LatexApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const Scaffold(
-        body: Center(child: Text('Ink2LaTeX')),
-      ),
+      home: const NavShell(),
     );
   }
 }
