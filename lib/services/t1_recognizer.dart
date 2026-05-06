@@ -1,4 +1,5 @@
-import 'dart:ui';
+import 'package:flutter/services.dart';
+import 'package:google_mlkit_digital_ink_recognition/google_mlkit_digital_ink_recognition.dart';
 import '../models/latex_block.dart';
 
 class RecognitionResult {
@@ -7,7 +8,8 @@ class RecognitionResult {
   final BlockType type;
 
   RecognitionResult({
-    required this.text, required this.confidence,
+    required this.text,
+    required this.confidence,
     this.type = BlockType.text,
   });
 }
@@ -18,11 +20,68 @@ abstract class Recognizer {
 
 class T1Recognizer implements Recognizer {
   static const double threshold = 0.7;
+  static const String _languageCode = 'en-US';
+
+  DigitalInkRecognizer? _recognizer;
+  bool _initialized = false;
+
+  Future<void> _ensureInitialized() async {
+    if (_initialized) return;
+
+    try {
+      _recognizer = DigitalInkRecognizer(languageCode: _languageCode);
+      _initialized = true;
+    } on MissingPluginException {
+      // ML Kit not available on this platform (tests, web, desktop)
+    } catch (_) {
+      // Recognizer creation failed
+    }
+  }
 
   @override
   Future<RecognitionResult> recognize(List<List<Offset>> strokes) async {
-    // Real: calls google_mlkit_digital_ink_recognition
-    // Stub: returns low confidence so T2 is always tried during dev
+    await _ensureInitialized();
+
+    if (_recognizer == null || strokes.isEmpty) {
+      return RecognitionResult(text: '', confidence: 0.0);
+    }
+
+    try {
+      final ink = Ink();
+      for (final stroke in strokes) {
+        if (stroke.isEmpty) continue;
+        final mlStroke = Stroke();
+        final startTime = DateTime.now().millisecondsSinceEpoch;
+        mlStroke.points = stroke.asMap().entries.map((entry) {
+          return StrokePoint(
+            x: entry.value.dx,
+            y: entry.value.dy,
+            t: startTime + entry.key,
+          );
+        }).toList();
+        ink.strokes.add(mlStroke);
+      }
+
+      final candidates = await _recognizer!.recognize(ink);
+      if (candidates.isNotEmpty) {
+        final top = candidates.first;
+        return RecognitionResult(
+          text: top.text,
+          confidence: top.score,
+        );
+      }
+    } on MissingPluginException {
+      // Not running on a real device
+    } catch (_) {
+      // Recognition failed
+    }
+
     return RecognitionResult(text: '', confidence: 0.0);
+  }
+
+  void dispose() {
+    _recognizer?.close();
+    _recognizer = null;
+    _initialized = false;
   }
 }

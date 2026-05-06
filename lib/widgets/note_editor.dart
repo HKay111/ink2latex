@@ -4,6 +4,8 @@ import '../models/note.dart';
 import '../models/latex_block.dart';
 import '../services/storage_service.dart';
 import '../services/recognition_pipeline.dart';
+import '../services/t3_recognizer.dart';
+import '../config.dart';
 import 'ink_canvas.dart';
 import 'toolbar.dart';
 import 'page_navigator.dart';
@@ -22,7 +24,9 @@ class NoteEditor extends StatefulWidget {
 class _NoteEditorState extends State<NoteEditor> {
   late Note _note;
   int _currentPageIndex = 0;
-  final _pipeline = RecognitionPipeline();
+  final _pipeline = RecognitionPipeline(
+    t3: AppConfig.isMathpixEnabled ? T3Recognizer(apiKey: AppConfig.mathpixApiKey) : null,
+  );
   final List<LatexBlock> _blocks = [];
   final GlobalKey<InkCanvasState> _canvasKey = GlobalKey();
   int _phoneTabIndex = 0;
