@@ -1,4 +1,6 @@
+import 'dart:ui';
 import 'latex_block.dart';
+import '../utils/ink_serializer.dart';
 
 class PageModel {
   final String id;
@@ -20,4 +22,22 @@ class PageModel {
       blocks: blocks ?? this.blocks,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'inkData': inkData is List<List<Offset>>
+        ? InkSerializer.strokesToJson(inkData as List<List<Offset>>)
+        : [],
+    'blocks': blocks.map((b) => b.toJson()).toList(),
+  };
+
+  factory PageModel.fromJson(Map<String, dynamic> json) => PageModel(
+    id: json['id'] as String,
+    inkData: (json['inkData'] as List).isEmpty
+        ? []
+        : InkSerializer.strokesFromJson(json['inkData'] as List),
+    blocks: (json['blocks'] as List)
+        .map((b) => LatexBlock.fromJson(b as Map<String, dynamic>))
+        .toList(),
+  );
 }

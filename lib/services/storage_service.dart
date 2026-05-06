@@ -108,11 +108,7 @@ class StorageService extends ChangeNotifier {
           'name': f.name,
           'parentId': f.parentId,
         }).toList(),
-        'notes': _notes.map((n) => {
-          'id': n.id,
-          'title': n.title,
-          'folderId': n.folderId,
-        }).toList(),
+        'notes': _notes.map((n) => n.toJson()).toList(),
       };
       await File(path).writeAsString(jsonEncode(data));
     } catch (_) {}
@@ -137,11 +133,7 @@ class StorageService extends ChangeNotifier {
       }
 
       for (final n in (data['notes'] as List? ?? [])) {
-        _notes.add(Note(
-          id: n['id'] as String,
-          title: n['title'] as String,
-          folderId: n['folderId'] as String,
-        ));
+        _notes.add(Note.fromJson(n as Map<String, dynamic>));
       }
 
       _loaded = true;

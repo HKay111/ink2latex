@@ -24,4 +24,22 @@ class LatexBlock {
     }
     return BlockType.text;
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'latexCode': latexCode,
+    'plainText': plainText,
+    'tier': tier,
+    'confidence': confidence,
+    'type': type.name,
+  };
+
+  factory LatexBlock.fromJson(Map<String, dynamic> json) => LatexBlock(
+    id: json['id'] as String,
+    latexCode: json['latexCode'] as String,
+    plainText: json['plainText'] as String,
+    tier: json['tier'] as int,
+    confidence: (json['confidence'] as num).toDouble(),
+    type: BlockType.values.byName(json['type'] as String),
+  );
 }

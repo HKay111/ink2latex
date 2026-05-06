@@ -37,4 +37,24 @@ class Note {
       createdAt: createdAt, updatedAt: DateTime.now(),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'folderId': folderId,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+    'pages': pages.map((p) => p.toJson()).toList(),
+  };
+
+  factory Note.fromJson(Map<String, dynamic> json) => Note(
+    id: json['id'] as String,
+    title: json['title'] as String,
+    folderId: json['folderId'] as String,
+    createdAt: DateTime.parse(json['createdAt'] as String),
+    updatedAt: DateTime.parse(json['updatedAt'] as String),
+    pages: (json['pages'] as List)
+        .map((p) => PageModel.fromJson(p as Map<String, dynamic>))
+        .toList(),
+  );
 }
