@@ -24,17 +24,25 @@ class T1Recognizer implements Recognizer {
 
   DigitalInkRecognizer? _recognizer;
   bool _initialized = false;
+  bool _initFailed = false;
 
   Future<void> _ensureInitialized() async {
-    if (_initialized) return;
+    if (_initialized || _initFailed) return;
 
     try {
+      // Download the EN language model if not already on device
+      final modelManager = DigitalInkRecognizerModelManager();
+      final downloaded = await modelManager.isModelDownloaded(_languageCode);
+      if (!downloaded) {
+        await modelManager.downloadModel(_languageCode);
+      }
+
       _recognizer = DigitalInkRecognizer(languageCode: _languageCode);
       _initialized = true;
     } on MissingPluginException {
-      // ML Kit not available on this platform (tests, web, desktop)
-    } catch (_) {
-      // Recognizer creation failed
+      _initFailed = true;
+    } catch (e) {
+      _initFailed = true;
     }
   }
 
@@ -70,40 +78,15 @@ class T1Recognizer implements Recognizer {
           confidence: top.score,
         );
       }
-    } on MissingPluginException {
-      // Not running on a real device — return fallback text
-      return RecognitionResult(
-        text: _fallbackText(strokes),
-        confidence: 0.3,
-      );
-    } catch (_) {
-      // Recognition failed — return fallback text
-      return RecognitionResult(
-        text: _fallbackText(strokes),
-        confidence: 0.3,
-      );
-    }
+    } catch (_) {}
 
-    return RecognitionResult(text: _fallbackText(strokes), confidence: 0.3);
-  }
-
-  /// Generates a basic text representation from stroke positions.
-  /// Fallback when ML Kit is unavailable. Enough to verify the pipeline works.
-  String _fallbackText(List<List<Offset>> strokes) {
-    if (strokes.isEmpty) return '';
-    final totalPoints = strokes.fold<int>(0, (sum, s) => sum + s.length);
-    final firstStroke = strokes.first;
-    if (firstStroke.isEmpty) return '';
-    final avgX = firstStroke.map((p) => p.dx).reduce((a, b) => a + b) / firstStroke.length;
-    final avgY = firstStroke.map((p) => p.dy).reduce((a, b) => a + b) / firstStroke.length;
-    if (totalPoints < 5) return '.';
-    if (totalPoints < 15) return 'stroke';
-    return 'handwriting (${totalPoints}pts, x:${avgX.toStringAsFixed(0)}, y:${avgY.toStringAsFixed(0)})';
+    return RecognitionResult(text: '', confidence: 0.0);
   }
 
   void dispose() {
     _recognizer?.close();
     _recognizer = null;
     _initialized = false;
+    _initFailed = false;
   }
 }

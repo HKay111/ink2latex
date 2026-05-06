@@ -29,7 +29,7 @@ class _NoteEditorState extends State<NoteEditor> {
         ? T3Recognizer(apiKey: AppConfig.mathpixApiKey)
         : null,
   );
-  final _blocksNotifier = ValueNotifier<List<LatexBlock>>([]);
+  final List<LatexBlock> _blocks = [];
   final GlobalKey<InkCanvasState> _canvasKey = GlobalKey();
   int _phoneTabIndex = 0;
 
@@ -45,23 +45,16 @@ class _NoteEditorState extends State<NoteEditor> {
     }
   }
 
-  @override
-  void dispose() {
-    _blocksNotifier.dispose();
-    super.dispose();
-  }
-
   void _onStrokeComplete(List<List<Offset>> strokes) async {
     final block = await _pipeline.recognize(strokes);
-    // Use ValueNotifier so ONLY the preview rebuilds, not the canvas
-    _blocksNotifier.value = [..._blocksNotifier.value, block];
+    setState(() => _blocks.add(block));
   }
 
   void _goToPage(int index) {
     if (index >= 0 && index < _note.pages.length) {
       setState(() {
         _currentPageIndex = index;
-        _blocksNotifier.value = [];
+        _blocks.clear();
       });
       _canvasKey.currentState?.clear();
     }
@@ -72,7 +65,7 @@ class _NoteEditorState extends State<NoteEditor> {
     setState(() {
       _note = updated;
       _currentPageIndex = updated.pages.length - 1;
-      _blocksNotifier.value = [];
+      _blocks.clear();
     });
   }
 
@@ -82,26 +75,21 @@ class _NoteEditorState extends State<NoteEditor> {
 
     if (isWide) {
       return Row(children: [
-        Expanded(flex: 2, child: _buildCanvasColumn()),
+        Expanded(flex: 2, child: _canvasColumn()),
         const VerticalDivider(width: 1),
-        Expanded(
-          flex: 1,
-          child: ValueListenableBuilder<List<LatexBlock>>(
-            valueListenable: _blocksNotifier,
-            builder: (context, blocks, child) => PreviewPane(blocks: blocks),
-          ),
-        ),
+        Expanded(flex: 1, child: _previewPane()),
       ]);
     }
 
-    // Phone: use bottom nav
+    // Phone: IndexedStack keeps BOTH children alive — canvas never unmounts
     return Scaffold(
-      body: _phoneTabIndex == 0
-          ? _buildCanvasColumn()
-          : ValueListenableBuilder<List<LatexBlock>>(
-              valueListenable: _blocksNotifier,
-              builder: (context, blocks, child) => PreviewPane(blocks: blocks),
-            ),
+      body: IndexedStack(
+        index: _phoneTabIndex,
+        children: [
+          _canvasColumn(),
+          _previewPane(),
+        ],
+      ),
       bottomNavigationBar: BottomNavigationBar(
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.edit), label: 'Canvas'),
@@ -113,17 +101,16 @@ class _NoteEditorState extends State<NoteEditor> {
     );
   }
 
-  Widget _buildCanvasColumn() {
+  Widget _canvasColumn() {
     return Column(children: [
       NoteToolbar(
         onUndo: () => _canvasKey.currentState?.undo(),
         onClear: () => _canvasKey.currentState?.clear(),
         onConvert: () async {
-          // Batch convert all strokes on the canvas
-          final canvasState = _canvasKey.currentState;
-          if (canvasState == null) return;
-          final blocks = await canvasState.recognizeAll(_pipeline);
-          _blocksNotifier.value = [..._blocksNotifier.value, ...blocks];
+          final state = _canvasKey.currentState;
+          if (state == null) return;
+          final allBlocks = await state.recognizeAll(_pipeline);
+          setState(() => _blocks.addAll(allBlocks));
         },
       ),
       Expanded(
@@ -140,5 +127,9 @@ class _NoteEditorState extends State<NoteEditor> {
         onAdd: _addPage,
       ),
     ]);
+  }
+
+  Widget _previewPane() {
+    return PreviewPane(blocks: _blocks);
   }
 }
