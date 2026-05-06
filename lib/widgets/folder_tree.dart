@@ -59,7 +59,7 @@ class FolderTree extends StatelessWidget {
   }
 }
 
-class _FolderTile extends StatelessWidget {
+class _FolderTile extends StatefulWidget {
   final Folder folder;
   final StorageService storage;
   final int depth;
@@ -71,30 +71,64 @@ class _FolderTile extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final children = storage.getChildFolders(folder.id);
-    final notes = storage.getNotes(folder.id);
+  State<_FolderTile> createState() => _FolderTileState();
+}
 
-    return ExpansionTile(
-      tilePadding: EdgeInsets.only(left: 16.0 + depth * 16.0),
-      title: Row(children: [
-        const Icon(Icons.folder, size: 20),
-        const SizedBox(width: 8),
-        Text(folder.name),
-        const Spacer(),
-        Text('${notes.length}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
-      ]),
+class _FolderTileState extends State<_FolderTile> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final children = widget.storage.getChildFolders(widget.folder.id);
+    final notes = widget.storage.getNotes(widget.folder.id);
+
+    return Column(
       children: [
-        for (final note in notes)
-          ListTile(
-            contentPadding: EdgeInsets.only(left: 32.0 + depth * 16.0),
-            leading: const Icon(Icons.note, size: 18),
-            title: Text(note.title, style: const TextStyle(fontSize: 14)),
-            dense: true,
-            onTap: onTap,
+        ListTile(
+          contentPadding: EdgeInsets.only(left: 16.0 + widget.depth * 16.0),
+          leading: const Icon(Icons.folder, size: 20),
+          title: Text(widget.folder.name),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('${notes.length}',
+                  style: const TextStyle(color: Colors.grey, fontSize: 12)),
+              IconButton(
+                icon: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
+                onPressed: () => setState(() => _expanded = !_expanded),
+                visualDensity: VisualDensity.compact,
+              ),
+            ],
           ),
-        for (final child in children)
-          _FolderTile(folder: child, storage: storage, depth: depth + 1, onTap: onTap),
+          onTap: widget.onTap,
+        ),
+        if (_expanded) ...[
+          Padding(
+            padding: EdgeInsets.only(left: 32.0 + widget.depth * 16.0),
+            child: ListTile(
+              leading: const Icon(Icons.note_add, size: 18),
+              title: const Text('New Note',
+                  style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic)),
+              dense: true,
+              onTap: widget.onTap,
+            ),
+          ),
+          for (final note in notes)
+            ListTile(
+              contentPadding: EdgeInsets.only(left: 32.0 + widget.depth * 16.0),
+              leading: const Icon(Icons.note, size: 18),
+              title: Text(note.title, style: const TextStyle(fontSize: 14)),
+              dense: true,
+              onTap: widget.onTap,
+            ),
+          for (final child in children)
+            _FolderTile(
+              folder: child,
+              storage: widget.storage,
+              depth: widget.depth + 1,
+              onTap: widget.onTap,
+            ),
+        ],
       ],
     );
   }
