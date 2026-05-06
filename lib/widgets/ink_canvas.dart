@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../models/latex_block.dart';
+import '../services/recognition_pipeline.dart';
 
 class InkCanvas extends StatefulWidget {
   final Function(List<List<Offset>> strokes)? onStrokeComplete;
@@ -38,6 +40,15 @@ class InkCanvasState extends State<InkCanvas> {
   }
 
   void clear() => setState(() { _strokes.clear(); _currentStroke = []; });
+
+  Future<List<LatexBlock>> recognizeAll(RecognitionPipeline pipeline) async {
+    final blocks = <LatexBlock>[];
+    for (final stroke in _strokes) {
+      final block = await pipeline.recognize([stroke]);
+      blocks.add(block);
+    }
+    return blocks;
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -25,9 +25,11 @@ class _NoteEditorState extends State<NoteEditor> {
   late Note _note;
   int _currentPageIndex = 0;
   final _pipeline = RecognitionPipeline(
-    t3: AppConfig.isMathpixEnabled ? T3Recognizer(apiKey: AppConfig.mathpixApiKey) : null,
+    t3: AppConfig.isMathpixEnabled
+        ? T3Recognizer(apiKey: AppConfig.mathpixApiKey)
+        : null,
   );
-  final List<LatexBlock> _blocks = [];
+  final _blocksNotifier = ValueNotifier<List<LatexBlock>>([]);
   final GlobalKey<InkCanvasState> _canvasKey = GlobalKey();
   int _phoneTabIndex = 0;
 
@@ -43,16 +45,23 @@ class _NoteEditorState extends State<NoteEditor> {
     }
   }
 
+  @override
+  void dispose() {
+    _blocksNotifier.dispose();
+    super.dispose();
+  }
+
   void _onStrokeComplete(List<List<Offset>> strokes) async {
     final block = await _pipeline.recognize(strokes);
-    setState(() => _blocks.add(block));
+    // Use ValueNotifier so ONLY the preview rebuilds, not the canvas
+    _blocksNotifier.value = [..._blocksNotifier.value, block];
   }
 
   void _goToPage(int index) {
     if (index >= 0 && index < _note.pages.length) {
       setState(() {
         _currentPageIndex = index;
-        _blocks.clear();
+        _blocksNotifier.value = [];
       });
       _canvasKey.currentState?.clear();
     }
@@ -63,7 +72,7 @@ class _NoteEditorState extends State<NoteEditor> {
     setState(() {
       _note = updated;
       _currentPageIndex = updated.pages.length - 1;
-      _blocks.clear();
+      _blocksNotifier.value = [];
     });
   }
 
@@ -75,12 +84,24 @@ class _NoteEditorState extends State<NoteEditor> {
       return Row(children: [
         Expanded(flex: 2, child: _buildCanvasColumn()),
         const VerticalDivider(width: 1),
-        Expanded(flex: 1, child: PreviewPane(blocks: _blocks)),
+        Expanded(
+          flex: 1,
+          child: ValueListenableBuilder<List<LatexBlock>>(
+            valueListenable: _blocksNotifier,
+            builder: (context, blocks, child) => PreviewPane(blocks: blocks),
+          ),
+        ),
       ]);
     }
 
+    // Phone: use bottom nav
     return Scaffold(
-      body: _buildCanvasColumn(),
+      body: _phoneTabIndex == 0
+          ? _buildCanvasColumn()
+          : ValueListenableBuilder<List<LatexBlock>>(
+              valueListenable: _blocksNotifier,
+              builder: (context, blocks, child) => PreviewPane(blocks: blocks),
+            ),
       bottomNavigationBar: BottomNavigationBar(
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.edit), label: 'Canvas'),
@@ -97,14 +118,19 @@ class _NoteEditorState extends State<NoteEditor> {
       NoteToolbar(
         onUndo: () => _canvasKey.currentState?.undo(),
         onClear: () => _canvasKey.currentState?.clear(),
+        onConvert: () async {
+          // Batch convert all strokes on the canvas
+          final canvasState = _canvasKey.currentState;
+          if (canvasState == null) return;
+          final blocks = await canvasState.recognizeAll(_pipeline);
+          _blocksNotifier.value = [..._blocksNotifier.value, ...blocks];
+        },
       ),
       Expanded(
-        child: _phoneTabIndex == 0 || MediaQuery.of(context).size.width > 800
-            ? InkCanvas(
-                key: _canvasKey,
-                onStrokeComplete: _onStrokeComplete,
-              )
-            : PreviewPane(blocks: _blocks),
+        child: InkCanvas(
+          key: _canvasKey,
+          onStrokeComplete: _onStrokeComplete,
+        ),
       ),
       PageNavigator(
         currentPage: _currentPageIndex,
