@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ink2latex/utils/ink_serializer.dart';
-import 'dart:ui';
 
 void main() {
   group('InkSerializer', () {

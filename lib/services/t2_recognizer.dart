@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/services.dart';
 import '../models/latex_block.dart';
 import 't1_recognizer.dart';

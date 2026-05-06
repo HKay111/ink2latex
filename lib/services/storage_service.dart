@@ -6,7 +6,7 @@ class StorageService {
   final List<Note> _notes = [];
 
   StorageService();
-  StorageService.inMemory() {}
+  StorageService.inMemory();
 
   List<Folder> get folders => List.unmodifiable(_folders);
 

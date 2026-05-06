@@ -1,8 +1,6 @@
-import 'dart:ui';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ink2latex/services/t1_recognizer.dart';
 import 'package:ink2latex/services/recognition_pipeline.dart';
-import 'package:ink2latex/models/latex_block.dart';
 
 class FakeRecognizer implements Recognizer {
   final RecognitionResult result;
