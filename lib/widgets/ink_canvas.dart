@@ -11,10 +11,10 @@ class InkCanvas extends StatefulWidget {
   });
 
   @override
-  State<InkCanvas> createState() => _InkCanvasState();
+  State<InkCanvas> createState() => InkCanvasState();
 }
 
-class _InkCanvasState extends State<InkCanvas> {
+class InkCanvasState extends State<InkCanvas> {
   final List<List<Offset>> _strokes = [];
   List<Offset> _currentStroke = [];
 
