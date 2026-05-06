@@ -5,8 +5,9 @@ import '../models/folder.dart';
 
 class FolderTree extends StatelessWidget {
   final Function(String folderId)? onFolderSelected;
+  final Function(String folderId, String noteId)? onNoteSelected;
 
-  const FolderTree({super.key, this.onFolderSelected});
+  const FolderTree({super.key, this.onFolderSelected, this.onNoteSelected});
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +32,7 @@ class FolderTree extends StatelessWidget {
           storage: storage,
           depth: 0,
           onTap: () => onFolderSelected?.call(folder.id),
+          onNoteTap: (noteId) => onNoteSelected?.call(folder.id, noteId),
         ),
       ],
     );
@@ -64,10 +66,11 @@ class _FolderTile extends StatefulWidget {
   final StorageService storage;
   final int depth;
   final VoidCallback? onTap;
+  final Function(String noteId)? onNoteTap;
 
   const _FolderTile({
     required this.folder, required this.storage,
-    required this.depth, this.onTap,
+    required this.depth, this.onTap, this.onNoteTap,
   });
 
   @override
@@ -119,7 +122,7 @@ class _FolderTileState extends State<_FolderTile> {
               leading: const Icon(Icons.note, size: 18),
               title: Text(note.title, style: const TextStyle(fontSize: 14)),
               dense: true,
-              onTap: widget.onTap,
+              onTap: () => widget.onNoteTap?.call(note.id),
             ),
           for (final child in children)
             _FolderTile(
@@ -127,6 +130,7 @@ class _FolderTileState extends State<_FolderTile> {
               storage: widget.storage,
               depth: widget.depth + 1,
               onTap: widget.onTap,
+              onNoteTap: widget.onNoteTap,
             ),
         ],
       ],

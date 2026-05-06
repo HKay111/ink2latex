@@ -52,21 +52,51 @@ class _NoteEditorState extends State<NoteEditor> {
 
   void _goToPage(int index) {
     if (index >= 0 && index < _note.pages.length) {
+      // Save current page state before leaving
+      final canvas = _canvasKey.currentState;
+      if (canvas != null) {
+        final strokes = canvas.getStrokes();
+        final updated = _note.pages[_currentPageIndex].copyWith(
+          inkData: strokes,
+          blocks: List.from(_blocks),
+        );
+        _note = _note.updatePage(_currentPageIndex, updated);
+        context.read<StorageService>().updateNotePages(_note.id, _note.pages);
+      }
+
       setState(() {
         _currentPageIndex = index;
         _blocks.clear();
+        _blocks.addAll(_note.pages[index].blocks);
       });
-      _canvasKey.currentState?.clear();
+      canvas?.loadStrokes(_note.pages[index].inkData.cast());
     }
   }
 
   void _addPage() {
+    // Save current page first
+    final canvas = _canvasKey.currentState;
+    if (canvas != null) {
+      final strokes = canvas.getStrokes();
+      _note.pages[_currentPageIndex] = _note.pages[_currentPageIndex].copyWith(
+        inkData: strokes,
+        blocks: List.from(_blocks),
+      );
+    }
+
     final updated = _note.addPage();
     setState(() {
       _note = updated;
       _currentPageIndex = updated.pages.length - 1;
       _blocks.clear();
     });
+    context.read<StorageService>().updateNotePages(updated.id, updated.pages);
+  }
+
+  @override
+  void dispose() {
+    _pipeline.dispose();
+    super.dispose();
   }
 
   @override

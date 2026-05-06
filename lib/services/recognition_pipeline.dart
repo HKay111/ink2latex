@@ -2,6 +2,7 @@ import 'dart:ui';
 import '../models/latex_block.dart';
 import 't1_recognizer.dart';
 import 't2_recognizer.dart';
+import 't3_recognizer.dart';
 
 class RecognitionPipeline {
   final Recognizer t1;
@@ -52,12 +53,19 @@ class RecognitionPipeline {
       }
     }
 
+    // All tiers failed — return a placeholder so the user knows something happened
+    final bestText = r2.text.isNotEmpty ? r2.text : r1.text;
     return LatexBlock(
-      latexCode: r2.text,
-      plainText: r2.text,
-      tier: 2,
-      confidence: r2.confidence,
-      type: r2.type,
+      latexCode: bestText.isNotEmpty ? bestText : '[unrecognized]',
+      plainText: bestText.isNotEmpty ? bestText : '[unrecognized]',
+      tier: bestText.isNotEmpty ? 2 : 1,
+      confidence: r2.confidence > 0 ? r2.confidence : 0.0,
+      type: BlockType.text,
     );
+  }
+
+  void dispose() {
+    if (t1 is T1Recognizer) (t1 as T1Recognizer).dispose();
+    if (t3 is T3Recognizer) (t3 as T3Recognizer).dispose();
   }
 }

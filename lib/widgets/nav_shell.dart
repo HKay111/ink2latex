@@ -24,12 +24,22 @@ class _NavShellState extends State<NavShell> {
             onPressed: () => setState(() => _selectedNoteId = null),
           ),
       ]),
-      drawer: Drawer(child: FolderTree(onFolderSelected: (id) {
-        setState(() { _selectedFolderId = id; _selectedNoteId = null; });
-        Navigator.pop(context);
-      })),
+      drawer: Drawer(child: FolderTree(
+        onFolderSelected: (id) {
+          setState(() { _selectedFolderId = id; _selectedNoteId = null; });
+          Navigator.pop(context);
+        },
+        onNoteSelected: (folderId, noteId) {
+          setState(() { _selectedFolderId = folderId; _selectedNoteId = noteId; });
+          Navigator.pop(context);
+        },
+      )),
       body: _selectedFolderId != null
-          ? NoteEditor(noteId: _selectedNoteId, folderId: _selectedFolderId!)
+          ? NoteEditor(
+              key: ValueKey(_selectedFolderId! + '-' + (_selectedNoteId ?? '')),
+              noteId: _selectedNoteId,
+              folderId: _selectedFolderId!,
+            )
           : const Center(child: Text('Create or select a folder to start')),
     );
   }

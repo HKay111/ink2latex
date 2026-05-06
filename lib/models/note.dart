@@ -27,4 +27,14 @@ class Note {
       createdAt: createdAt, updatedAt: DateTime.now(),
     );
   }
+
+  Note updatePage(int index, PageModel page) {
+    final newPages = List<PageModel>.from(pages);
+    newPages[index] = page;
+    return Note(
+      id: id, title: title, folderId: folderId,
+      pages: newPages,
+      createdAt: createdAt, updatedAt: DateTime.now(),
+    );
+  }
 }

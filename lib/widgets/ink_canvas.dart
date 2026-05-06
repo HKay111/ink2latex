@@ -31,7 +31,7 @@ class InkCanvasState extends State<InkCanvas> {
   void _onPointerUp(PointerUpEvent e) {
     _currentStroke.add(e.localPosition);
     _strokes.add(List.from(_currentStroke));
-    widget.onStrokeComplete?.call([List.from(_currentStroke)]);
+    widget.onStrokeComplete?.call(List.from(_strokes));
     _currentStroke = [];
   }
 
@@ -41,13 +41,20 @@ class InkCanvasState extends State<InkCanvas> {
 
   void clear() => setState(() { _strokes.clear(); _currentStroke = []; });
 
+  List<List<Offset>> getStrokes() => List.unmodifiable(_strokes);
+
+  void loadStrokes(List<List<Offset>> strokes) {
+    setState(() {
+      _strokes.clear();
+      _strokes.addAll(strokes);
+      _currentStroke = [];
+    });
+  }
+
   Future<List<LatexBlock>> recognizeAll(RecognitionPipeline pipeline) async {
-    final blocks = <LatexBlock>[];
-    for (final stroke in _strokes) {
-      final block = await pipeline.recognize([stroke]);
-      blocks.add(block);
-    }
-    return blocks;
+    if (_strokes.isEmpty) return [];
+    final block = await pipeline.recognize(List.from(_strokes));
+    return [block];
   }
 
   @override

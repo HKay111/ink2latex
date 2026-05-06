@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/folder.dart';
 import '../models/note.dart';
+import '../models/page_model.dart';
 
 class StorageService extends ChangeNotifier {
   final List<Folder> _folders = [];
@@ -76,6 +77,18 @@ class StorageService extends ChangeNotifier {
     _saveToDisk();
     notifyListeners();
     return true;
+  }
+
+  void updateNotePages(String noteId, List<PageModel> pages) {
+    final i = _notes.indexWhere((n) => n.id == noteId);
+    if (i == -1) return;
+    final old = _notes[i];
+    _notes[i] = Note(
+      id: old.id, title: old.title, folderId: old.folderId,
+      pages: pages, createdAt: old.createdAt, updatedAt: DateTime.now(),
+    );
+    _saveToDisk();
+    notifyListeners();
   }
 
   // ---- Persistence ----
