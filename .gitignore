@@ -1,3 +1,7 @@
+# Signing
+android/key.properties
+android/ink2latex.keystore
+
 # Miscellaneous
 *.class
 *.log
